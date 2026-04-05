@@ -14,7 +14,7 @@ class AuthController extends Controller
 {
     public function register(RegisterRequest $request)
     {
-        $user  = User::create($request->validated());
+        $user  = User::create(array_merge($request->validated(), ['role' => 'caregiver']));
         $token = $user->createToken('api-token')->plainTextToken;
 
         return response()->json([
