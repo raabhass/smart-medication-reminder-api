@@ -39,6 +39,11 @@ class User extends Authenticatable
         return $this->hasMany(Patient::class, 'created_by_user_id');
     }
 
+    public function patient()
+    {
+        return $this->hasOne(Patient::class, 'user_id');
+    }
+
     public function acknowledgedAlerts()
     {
         return $this->hasMany(Alert::class, 'acknowledged_by_user_id');

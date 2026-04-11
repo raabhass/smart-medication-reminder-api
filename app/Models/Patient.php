@@ -10,6 +10,7 @@ class Patient extends Model
     use SoftDeletes;
 
     protected $fillable = [
+        'user_id',
         'created_by_user_id',
         'full_name',
         'age',
@@ -17,6 +18,16 @@ class Patient extends Model
         'status',
         'notes',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by_user_id');
+    }
 
     public function creator()
     {
