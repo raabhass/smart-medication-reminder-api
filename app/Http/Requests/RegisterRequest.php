@@ -17,7 +17,7 @@ class RegisterRequest extends FormRequest
             'name'     => ['required', 'string', 'max:255'],
             'email'    => ['required', 'email', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            // role is not accepted from input; always set to caregiver on registration
+            'role'     => ['nullable', 'string', 'in:caregiver,patient'],
         ];
     }
 }
