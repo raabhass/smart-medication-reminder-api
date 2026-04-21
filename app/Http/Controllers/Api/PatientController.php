@@ -7,6 +7,7 @@ use App\Http\Requests\StorePatientRequest;
 use App\Http\Requests\UpdatePatientRequest;
 use App\Http\Resources\PatientResource;
 use App\Models\Patient;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class PatientController extends Controller
@@ -55,5 +56,26 @@ class PatientController extends Controller
         $patient->delete();
 
         return response()->json(['message' => 'Patient deleted']);
+    }
+
+    public function linkUser(Request $request, Patient $patient)
+    {
+        $request->validate([
+            'user_id' => ['required', 'integer', 'exists:users,id'],
+        ]);
+
+        $user = User::findOrFail($request->user_id);
+
+        if ($user->role !== 'patient') {
+            return response()->json(['message' => 'User must have role patient'], 422);
+        }
+
+        if (Patient::where('user_id', $user->id)->exists()) {
+            return response()->json(['message' => 'User is already linked to another patient'], 422);
+        }
+
+        $patient->update(['user_id' => $user->id]);
+
+        return new PatientResource($patient->fresh());
     }
 }

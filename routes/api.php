@@ -22,6 +22,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/patients/{patient}', [PatientController::class, 'show']);
     Route::patch('/patients/{patient}', [PatientController::class, 'update']);
     Route::delete('/patients/{patient}', [PatientController::class, 'destroy']);
+    Route::post('/patients/{patient}/link-user', [PatientController::class, 'linkUser']);
 
     Route::get('/patients/{patient}/medication-schedules', [MedicationScheduleController::class, 'indexByPatient']);
     Route::post('/patients/{patient}/medication-schedules', [MedicationScheduleController::class, 'store']);
