@@ -15,7 +15,7 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // Caregiver user
+        // Caregiver user — login: caregiver@example.com / password
         $user = User::create([
             'name'     => 'Primary Caregiver',
             'email'    => 'caregiver@example.com',

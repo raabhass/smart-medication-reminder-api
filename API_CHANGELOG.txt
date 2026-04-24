@@ -1,0 +1,112 @@
+API Changelog - Smart Medication Reminder
+==========================================
+
+
+AUTH
+----
+
+POST /api/auth/register -- updated
+Accepts an optional `role` field. Defaults to `caregiver` if omitted.
+
+Request body:
+  name                 string, required
+  email                string, required, unique
+  password             string, required, min 8
+  password_confirmation string, required
+  role                 caregiver | patient, optional, default: caregiver
+
+Response 201:
+  {
+    "message": "User registered successfully",
+    "token": "...",
+    "user": {
+      "id": 1,
+      "name": "Jane Doe",
+      "email": "jane@example.com",
+      "role": "patient",
+      "patient_id": 4
+    }
+  }
+
+- patient_id is only present when role is patient.
+- When registering as patient, a Patient record is automatically created
+  (linked to the user, full_name set from name, status defaults to stable).
+  No age required at signup.
+
+
+POST /api/auth/login -- updated
+Same request as before. Response now includes patient_id for patient-role
+users (same shape as register response above).
+
+
+GET /api/auth/me -- updated
+Now returns patient_id for patient-role users.
+
+Response:
+  {
+    "id": 1,
+    "name": "Jane Doe",
+    "email": "jane@example.com",
+    "role": "patient",
+    "patient_id": 4
+  }
+
+
+PATIENTS
+--------
+
+POST /api/patients/{patient}/link-user -- NEW (auth required, caregiver use)
+Links an existing patient-role user account to a patient record.
+
+Request body:
+  user_id    integer, required
+
+Validation rules:
+  - user_id must exist in the users table.
+  - The user's role must be patient.
+  - The user must not already be linked to another patient.
+
+Response 200: returns the updated PatientResource.
+
+Error responses:
+  422 -- user role is not patient
+  422 -- user is already linked to another patient
+
+
+All patient responses -- updated
+All patient endpoints now include user_id in the response body:
+
+  {
+    "id": 1,
+    "user_id": 5,
+    "full_name": "Jane Doe",
+    "age": null,
+    "gender": "female",
+    "role_label": "Patient",
+    "status": "stable",
+    "notes": null,
+    "created_by_user_id": null,
+    "created_at": "...",
+    "updated_at": "..."
+  }
+
+- user_id: linked user account ID, or null if not yet linked.
+- age: now nullable; not required on creation.
+- created_by_user_id: now nullable; will be null for self-registered patient accounts.
+
+
+UNCHANGED ENDPOINTS
+-------------------
+These continue to work exactly as before:
+  GET    /api/patients
+  POST   /api/patients
+  GET    /api/patients/{patient}
+  PATCH  /api/patients/{patient}
+  DELETE /api/patients/{patient}
+
+
+SEED CREDENTIALS (dev/staging)
+-------------------------------
+  Email:    caregiver@example.com
+  Password: password
+  Role:     caregiver
