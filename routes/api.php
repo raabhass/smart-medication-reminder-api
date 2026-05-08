@@ -20,6 +20,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/patients', [PatientController::class, 'index']);
     Route::post('/patients', [PatientController::class, 'store']);
     Route::get('/patients/{patient}', [PatientController::class, 'show']);
+    Route::put('/patients/{patient}', [PatientController::class, 'update']);
     Route::patch('/patients/{patient}', [PatientController::class, 'update']);
     Route::delete('/patients/{patient}', [PatientController::class, 'destroy']);
     Route::post('/patients/{patient}/link-user', [PatientController::class, 'linkUser']);
