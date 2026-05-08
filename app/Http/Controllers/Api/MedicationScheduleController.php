@@ -25,14 +25,14 @@ class MedicationScheduleController extends Controller
         return new MedicationScheduleResource($schedule);
     }
 
-    public function update(UpdateMedicationScheduleRequest $request, MedicationSchedule $medicationSchedule)
+    public function update(UpdateMedicationScheduleRequest $request, Patient $patient, MedicationSchedule $medicationSchedule)
     {
         $medicationSchedule->update($request->validated());
 
         return new MedicationScheduleResource($medicationSchedule);
     }
 
-    public function destroy(MedicationSchedule $medicationSchedule)
+    public function destroy(Patient $patient, MedicationSchedule $medicationSchedule)
     {
         $medicationSchedule->update(['is_active' => false]);
 
