@@ -1,0 +1,638 @@
+{
+  "info": {
+    "_postman_id": "94d4d7bf-5352-4678-95ac-0656a45d8980",
+    "name": "Smart Medication Reminder API",
+    "description": "Current Postman collection generated from the Laravel API routes. Use Login first to store {{token}} automatically.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "193554"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": []
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": []
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register Caregiver",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Primary Caregiver\",\n  \"email\": \"caregiver@example.com\",\n  \"password\": \"password123\",\n  \"password_confirmation\": \"password123\",\n  \"role\": \"caregiver\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Creates a caregiver user. Role is optional and defaults to caregiver."
+          },
+          "response": []
+        },
+        {
+          "name": "Register Patient",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let jsonData = {};",
+                  "try { jsonData = pm.response.json(); } catch (e) {}",
+                  "if (jsonData.token) { pm.collectionVariables.set('token', jsonData.token); pm.environment.set('token', jsonData.token); }",
+                  "if (jsonData.user && jsonData.user.patient_id) { pm.collectionVariables.set('patient_id', jsonData.user.patient_id); pm.environment.set('patient_id', jsonData.user.patient_id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Patient User\",\n  \"email\": \"patient@example.com\",\n  \"password\": \"password123\",\n  \"password_confirmation\": \"password123\",\n  \"role\": \"patient\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Creates a patient user and automatically creates a linked patient record."
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let jsonData = {};",
+                  "try { jsonData = pm.response.json(); } catch (e) {}",
+                  "if (jsonData.token) { pm.collectionVariables.set('token', jsonData.token); pm.environment.set('token', jsonData.token); }",
+                  "if (jsonData.user && jsonData.user.id) { pm.collectionVariables.set('user_id', jsonData.user.id); pm.environment.set('user_id', jsonData.user.id); }",
+                  "if (jsonData.user && jsonData.user.patient_id) { pm.collectionVariables.set('patient_id', jsonData.user.patient_id); pm.environment.set('patient_id', jsonData.user.patient_id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"caregiver@example.com\",\n  \"password\": \"password\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "me"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Current User",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated User Name\",\n  \"email\": \"updated-user@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "Password can also be updated with password and password_confirmation."
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "logout"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Get Summary",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/dashboard/summary",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "summary"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Patients",
+      "item": [
+        {
+          "name": "List Patients",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let jsonData = {};",
+                  "try { jsonData = pm.response.json(); } catch (e) {}",
+                  "if (jsonData.data && jsonData.data.length && jsonData.data[0].id) { pm.collectionVariables.set('patient_id', jsonData.data[0].id); pm.environment.set('patient_id', jsonData.data[0].id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/patients?per_page=50&search=&status=",
+              "host": ["{{base_url}}"],
+              "path": ["patients"],
+              "query": [
+                { "key": "per_page", "value": "50" },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "status", "value": "", "disabled": true }
+              ]
+            },
+            "description": "Caregivers see patients they created. Patient users see only their linked patient record."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Patient",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let jsonData = {};",
+                  "try { jsonData = pm.response.json(); } catch (e) {}",
+                  "if (jsonData.data && jsonData.data.id) { pm.collectionVariables.set('patient_id', jsonData.data.id); pm.environment.set('patient_id', jsonData.data.id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"John Doe\",\n  \"age\": 78,\n  \"gender\": \"male\",\n  \"status\": \"stable\",\n  \"notes\": \"Needs morning reminder\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/patients",
+              "host": ["{{base_url}}"],
+              "path": ["patients"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Patient",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/patients/{{patient_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["patients", "{{patient_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Patient - PUT",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"John Doe Updated\",\n  \"age\": 79,\n  \"gender\": \"male\",\n  \"status\": \"needs_attention\",\n  \"notes\": \"Updated note\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/patients/{{patient_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["patients", "{{patient_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Patient - PATCH",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"stable\",\n  \"notes\": \"Partial update note\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/patients/{{patient_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["patients", "{{patient_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Link Patient User",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": {{linked_patient_user_id}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/patients/{{patient_id}}/link-user",
+              "host": ["{{base_url}}"],
+              "path": ["patients", "{{patient_id}}", "link-user"]
+            },
+            "description": "The linked user must exist, have role patient, and not already be linked to another patient."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Patient",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/patients/{{patient_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["patients", "{{patient_id}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Medication Schedules",
+      "item": [
+        {
+          "name": "List Schedules By Patient",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let jsonData = {};",
+                  "try { jsonData = pm.response.json(); } catch (e) {}",
+                  "if (jsonData.data && jsonData.data.length && jsonData.data[0].id) { pm.collectionVariables.set('medication_schedule_id', jsonData.data[0].id); pm.collectionVariables.set('schedule_id', jsonData.data[0].id); pm.environment.set('medication_schedule_id', jsonData.data[0].id); pm.environment.set('schedule_id', jsonData.data[0].id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/patients/{{patient_id}}/medication-schedules",
+              "host": ["{{base_url}}"],
+              "path": ["patients", "{{patient_id}}", "medication-schedules"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Schedule",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let jsonData = {};",
+                  "try { jsonData = pm.response.json(); } catch (e) {}",
+                  "if (jsonData.data && jsonData.data.id) { pm.collectionVariables.set('medication_schedule_id', jsonData.data.id); pm.collectionVariables.set('schedule_id', jsonData.data.id); pm.environment.set('medication_schedule_id', jsonData.data.id); pm.environment.set('schedule_id', jsonData.data.id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"medication_name\": \"Aspirin\",\n  \"dosage\": \"75 mg\",\n  \"frequency\": \"daily\",\n  \"scheduled_time\": \"08:00\",\n  \"instructions\": \"After breakfast\",\n  \"start_date\": \"2026-05-10\",\n  \"end_date\": null,\n  \"doctor_name\": \"Dr. Smith\",\n  \"hospital_name\": \"City Clinic\",\n  \"remaining_pills\": 30,\n  \"refill_date\": \"2026-06-10\",\n  \"is_active\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/patients/{{patient_id}}/medication-schedules",
+              "host": ["{{base_url}}"],
+              "path": ["patients", "{{patient_id}}", "medication-schedules"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Schedule - PUT",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"medication_name\": \"Aspirin\",\n  \"dosage\": \"100 mg\",\n  \"frequency\": \"daily\",\n  \"scheduled_time\": \"09:00\",\n  \"instructions\": \"After breakfast\",\n  \"start_date\": \"2026-05-10\",\n  \"end_date\": null,\n  \"doctor_name\": \"Dr. Smith\",\n  \"hospital_name\": \"City Clinic\",\n  \"remaining_pills\": 25,\n  \"refill_date\": \"2026-06-10\",\n  \"is_active\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/patients/{{patient_id}}/medication-schedules/{{medication_schedule_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["patients", "{{patient_id}}", "medication-schedules", "{{medication_schedule_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Schedule - PATCH",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"remaining_pills\": 24,\n  \"refill_date\": \"2026-06-10\",\n  \"instructions\": \"After breakfast\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/patients/{{patient_id}}/medication-schedules/{{medication_schedule_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["patients", "{{patient_id}}", "medication-schedules", "{{medication_schedule_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Deactivate Schedule",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/patients/{{patient_id}}/medication-schedules/{{medication_schedule_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["patients", "{{patient_id}}", "medication-schedules", "{{medication_schedule_id}}"]
+            },
+            "description": "This endpoint soft-deactivates the schedule by setting is_active=false."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Dose Events & Medication History",
+      "item": [
+        {
+          "name": "Create Dose Event - Taken",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let jsonData = {};",
+                  "try { jsonData = pm.response.json(); } catch (e) {}",
+                  "if (jsonData.data && jsonData.data.id) { pm.collectionVariables.set('dose_event_id', jsonData.data.id); pm.environment.set('dose_event_id', jsonData.data.id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patient_id\": {{patient_id}},\n  \"medication_schedule_id\": {{medication_schedule_id}},\n  \"status\": \"taken\",\n  \"event_time\": \"2026-05-10 08:02:00\",\n  \"notes\": \"Taken with breakfast\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/dose-events",
+              "host": ["{{base_url}}"],
+              "path": ["dose-events"]
+            },
+            "description": "Valid statuses: taken, missed, skipped. Response includes the created event id."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Dose Event - Missed",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patient_id\": {{patient_id}},\n  \"medication_schedule_id\": {{medication_schedule_id}},\n  \"status\": \"missed\",\n  \"event_time\": \"2026-05-10 09:00:00\",\n  \"notes\": \"Missed dose\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/dose-events",
+              "host": ["{{base_url}}"],
+              "path": ["dose-events"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Dose Event - Skipped",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patient_id\": {{patient_id}},\n  \"medication_schedule_id\": {{medication_schedule_id}},\n  \"status\": \"skipped\",\n  \"event_time\": \"2026-05-10 10:00:00\",\n  \"notes\": \"Skipped by instruction\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/dose-events",
+              "host": ["{{base_url}}"],
+              "path": ["dose-events"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Medication History",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/medication-history?per_page=50&patient_id=&status=&date_from=&date_to=",
+              "host": ["{{base_url}}"],
+              "path": ["medication-history"],
+              "query": [
+                { "key": "per_page", "value": "50" },
+                { "key": "patient_id", "value": "", "disabled": true },
+                { "key": "status", "value": "", "disabled": true },
+                { "key": "date_from", "value": "", "disabled": true },
+                { "key": "date_to", "value": "", "disabled": true }
+              ]
+            },
+            "description": "Patient users see only their own history. Caregivers see history for patients they created."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Alerts",
+      "item": [
+        {
+          "name": "List Alerts",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let jsonData = {};",
+                  "try { jsonData = pm.response.json(); } catch (e) {}",
+                  "if (jsonData.data && jsonData.data.length && jsonData.data[0].id) { pm.collectionVariables.set('alert_id', jsonData.data[0].id); pm.environment.set('alert_id', jsonData.data[0].id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/alerts?per_page=50&patient_id=&type=&is_acknowledged=",
+              "host": ["{{base_url}}"],
+              "path": ["alerts"],
+              "query": [
+                { "key": "per_page", "value": "50" },
+                { "key": "patient_id", "value": "", "disabled": true },
+                { "key": "type", "value": "", "disabled": true },
+                { "key": "is_acknowledged", "value": "", "disabled": true }
+              ]
+            },
+            "description": "Supports filters: patient_id, type, is_acknowledged, per_page."
+          },
+          "response": []
+        },
+        {
+          "name": "Acknowledge Alert",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/alerts/{{alert_id}}/acknowledge",
+              "host": ["{{base_url}}"],
+              "path": ["alerts", "{{alert_id}}", "acknowledge"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1:8000/api", "type": "string" },
+    { "key": "token", "value": "", "type": "string" },
+    { "key": "user_id", "value": "1", "type": "string" },
+    { "key": "linked_patient_user_id", "value": "2", "type": "string" },
+    { "key": "patient_id", "value": "1", "type": "string" },
+    { "key": "medication_schedule_id", "value": "1", "type": "string" },
+    { "key": "schedule_id", "value": "1", "type": "string" },
+    { "key": "dose_event_id", "value": "1", "type": "string" },
+    { "key": "alert_id", "value": "1", "type": "string" }
+  ]
+}
