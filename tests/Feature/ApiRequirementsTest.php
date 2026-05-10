@@ -219,6 +219,65 @@ class ApiRequirementsTest extends TestCase
             ->assertJsonPath('meta.per_page', 50);
     }
 
+    public function test_dashboard_summary_matches_authenticated_caregiver_patients(): void
+    {
+        $caregiver = User::factory()->create(['role' => 'caregiver']);
+        $otherCaregiver = User::factory()->create(['role' => 'caregiver']);
+        $patient = Patient::create([
+            'created_by_user_id' => $caregiver->id,
+            'full_name' => 'Visible Patient',
+            'status' => 'stable',
+        ]);
+        $secondPatient = Patient::create([
+            'created_by_user_id' => $caregiver->id,
+            'full_name' => 'Second Visible Patient',
+            'status' => 'stable',
+        ]);
+        $otherPatient = Patient::create([
+            'created_by_user_id' => $otherCaregiver->id,
+            'full_name' => 'Hidden Patient',
+            'status' => 'stable',
+        ]);
+        $schedule = $this->scheduleFor($patient);
+        $otherSchedule = $this->scheduleFor($otherPatient);
+
+        DoseEvent::create([
+            'patient_id' => $patient->id,
+            'medication_schedule_id' => $schedule->id,
+            'status' => 'missed',
+            'event_time' => now(),
+        ]);
+        DoseEvent::create([
+            'patient_id' => $otherPatient->id,
+            'medication_schedule_id' => $otherSchedule->id,
+            'status' => 'missed',
+            'event_time' => now(),
+        ]);
+
+        Alert::create([
+            'patient_id' => $secondPatient->id,
+            'type' => 'refill_due',
+            'message' => 'Visible refill',
+            'alert_time' => now(),
+        ]);
+        Alert::create([
+            'patient_id' => $otherPatient->id,
+            'type' => 'refill_due',
+            'message' => 'Hidden refill',
+            'alert_time' => now(),
+        ]);
+
+        Sanctum::actingAs($caregiver);
+
+        $this->getJson('/api/dashboard/summary')
+            ->assertOk()
+            ->assertJsonPath('total_patients', 2)
+            ->assertJsonPath('missed_doses_today', 1)
+            ->assertJsonPath('active_alerts', 1)
+            ->assertJsonPath('upcoming_refills', 1)
+            ->assertJsonCount(1, 'recent_alerts');
+    }
+
     private function scheduleFor(Patient $patient, array $attributes = []): MedicationSchedule
     {
         return MedicationSchedule::create(array_merge([
