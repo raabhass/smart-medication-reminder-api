@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
+use App\Http\Requests\UpdateProfileRequest;
 use App\Http\Resources\UserResource;
 use App\Models\Patient;
 use App\Models\User;
@@ -15,16 +16,16 @@ class AuthController extends Controller
 {
     public function register(RegisterRequest $request)
     {
-        $data         = $request->validated();
+        $data = $request->validated();
         $data['role'] = $data['role'] ?? 'caregiver';
 
         $user = User::create($data);
 
         if ($user->role === 'patient') {
             Patient::create([
-                'user_id'   => $user->id,
+                'user_id' => $user->id,
                 'full_name' => $user->name,
-                'status'    => 'stable',
+                'status' => 'stable',
             ]);
         }
 
@@ -33,8 +34,8 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'User registered successfully',
-            'token'   => $token,
-            'user'    => new UserResource($user),
+            'token' => $token,
+            'user' => new UserResource($user),
         ], 201);
     }
 
@@ -44,19 +45,27 @@ class AuthController extends Controller
             return response()->json(['message' => 'Invalid credentials'], 401);
         }
 
-        $user  = Auth::user()->load('patient');
+        $user = Auth::user()->load('patient');
         $token = $user->createToken('api-token')->plainTextToken;
 
         return response()->json([
             'message' => 'Login successful',
-            'token'   => $token,
-            'user'    => new UserResource($user),
+            'token' => $token,
+            'user' => new UserResource($user),
         ]);
     }
 
     public function me(Request $request)
     {
         return new UserResource($request->user()->load('patient'));
+    }
+
+    public function updateMe(UpdateProfileRequest $request)
+    {
+        $user = $request->user();
+        $user->update($request->validated());
+
+        return new UserResource($user->fresh()->load('patient'));
     }
 
     public function logout(Request $request)
