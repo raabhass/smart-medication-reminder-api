@@ -22,6 +22,13 @@ class DoseEventController extends Controller
     public function history(Request $request)
     {
         $query = DoseEvent::with(['patient', 'medicationSchedule']);
+        $user = $request->user();
+
+        if ($user->role === 'patient') {
+            $query->whereHas('patient', fn ($patientQuery) => $patientQuery->where('user_id', $user->id));
+        } else {
+            $query->whereHas('patient', fn ($patientQuery) => $patientQuery->where('created_by_user_id', $user->id));
+        }
 
         if ($request->filled('patient_id')) {
             $query->where('patient_id', $request->patient_id);
@@ -40,7 +47,7 @@ class DoseEventController extends Controller
         }
 
         $perPage = (int) $request->get('per_page', 10);
-        $events  = $query->orderByDesc('event_time')->paginate($perPage);
+        $events = $query->orderByDesc('event_time')->paginate($perPage);
 
         return DoseEventHistoryResource::collection($events);
     }
