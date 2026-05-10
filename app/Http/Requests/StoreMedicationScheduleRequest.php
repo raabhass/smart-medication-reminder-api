@@ -15,13 +15,17 @@ class StoreMedicationScheduleRequest extends FormRequest
     {
         return [
             'medication_name' => ['required', 'string', 'max:255'],
-            'dosage'          => ['required', 'string', 'max:100'],
-            'frequency'       => ['required', 'string', 'max:50'],
-            'scheduled_time'  => ['required', 'date_format:H:i:s,H:i'],
-            'instructions'    => ['nullable', 'string'],
-            'start_date'      => ['required', 'date'],
-            'end_date'        => ['nullable', 'date', 'after_or_equal:start_date'],
-            'is_active'       => ['boolean'],
+            'dosage' => ['required', 'string', 'max:100'],
+            'frequency' => ['required', 'string', 'max:50'],
+            'scheduled_time' => ['required', 'date_format:H:i:s,H:i'],
+            'instructions' => ['nullable', 'string'],
+            'start_date' => ['required', 'date'],
+            'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
+            'doctor_name' => ['nullable', 'string', 'max:255'],
+            'hospital_name' => ['nullable', 'string', 'max:255'],
+            'remaining_pills' => ['nullable', 'integer', 'min:0'],
+            'refill_date' => ['nullable', 'date'],
+            'is_active' => ['boolean'],
         ];
     }
 }

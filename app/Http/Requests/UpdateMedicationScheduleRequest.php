@@ -15,13 +15,17 @@ class UpdateMedicationScheduleRequest extends FormRequest
     {
         return [
             'medication_name' => ['sometimes', 'string', 'max:255'],
-            'dosage'          => ['sometimes', 'string', 'max:100'],
-            'frequency'       => ['sometimes', 'string', 'max:50'],
-            'scheduled_time'  => ['sometimes', 'date_format:H:i:s,H:i'],
-            'instructions'    => ['nullable', 'string'],
-            'start_date'      => ['sometimes', 'date'],
-            'end_date'        => ['nullable', 'date', 'after_or_equal:start_date'],
-            'is_active'       => ['boolean'],
+            'dosage' => ['sometimes', 'string', 'max:100'],
+            'frequency' => ['sometimes', 'string', 'max:50'],
+            'scheduled_time' => ['sometimes', 'date_format:H:i:s,H:i'],
+            'instructions' => ['nullable', 'string'],
+            'start_date' => ['sometimes', 'date'],
+            'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
+            'doctor_name' => ['nullable', 'string', 'max:255'],
+            'hospital_name' => ['nullable', 'string', 'max:255'],
+            'remaining_pills' => ['nullable', 'integer', 'min:0'],
+            'refill_date' => ['nullable', 'date'],
+            'is_active' => ['boolean'],
         ];
     }
 }

@@ -15,6 +15,10 @@ class MedicationSchedule extends Model
         'instructions',
         'start_date',
         'end_date',
+        'doctor_name',
+        'hospital_name',
+        'remaining_pills',
+        'refill_date',
         'is_active',
     ];
 
@@ -24,6 +28,7 @@ class MedicationSchedule extends Model
             'is_active' => 'boolean',
             'start_date' => 'date',
             'end_date' => 'date',
+            'refill_date' => 'date',
         ];
     }
 
