@@ -7,6 +7,15 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class StoreDoseEventRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('status')) {
+            $this->merge([
+                'status' => strtolower(trim((string) $this->input('status'))),
+            ]);
+        }
+    }
+
     public function authorize(): bool
     {
         return true;

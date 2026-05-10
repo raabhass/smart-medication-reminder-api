@@ -182,6 +182,61 @@ class ApiRequirementsTest extends TestCase
         }
     }
 
+    public function test_taken_dose_event_status_is_normalized_and_visible_in_history(): void
+    {
+        $caregiver = User::factory()->create(['role' => 'caregiver']);
+        $patient = Patient::create([
+            'created_by_user_id' => $caregiver->id,
+            'full_name' => 'Visible Patient',
+            'status' => 'stable',
+        ]);
+        $schedule = $this->scheduleFor($patient);
+
+        Sanctum::actingAs($caregiver);
+
+        $this->postJson('/api/dose-events', [
+            'patient_id' => $patient->id,
+            'medication_schedule_id' => $schedule->id,
+            'status' => 'Taken',
+            'event_time' => now()->toDateTimeString(),
+        ])->assertCreated()
+            ->assertJsonPath('data.patient_name', 'Visible Patient')
+            ->assertJsonPath('data.status', 'taken');
+
+        $this->getJson('/api/medication-history?status=Taken&per_page=50')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.patient_name', 'Visible Patient')
+            ->assertJsonPath('data.0.status', 'taken');
+    }
+
+    public function test_medication_history_returns_patient_name_for_soft_deleted_patient(): void
+    {
+        $caregiver = User::factory()->create(['role' => 'caregiver']);
+        $patient = Patient::create([
+            'created_by_user_id' => $caregiver->id,
+            'full_name' => 'Deleted Patient',
+            'status' => 'stable',
+        ]);
+        $schedule = $this->scheduleFor($patient);
+
+        DoseEvent::create([
+            'patient_id' => $patient->id,
+            'medication_schedule_id' => $schedule->id,
+            'status' => 'taken',
+            'event_time' => now(),
+        ]);
+        $patient->delete();
+
+        Sanctum::actingAs($caregiver);
+
+        $this->getJson('/api/medication-history?per_page=50')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.patient_name', 'Deleted Patient')
+            ->assertJsonPath('data.0.status', 'taken');
+    }
+
     public function test_alerts_are_scoped_and_paginated(): void
     {
         $caregiver = User::factory()->create(['role' => 'caregiver']);

@@ -35,7 +35,7 @@ class DoseEventController extends Controller
         }
 
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            $query->where('status', strtolower(trim((string) $request->status)));
         }
 
         if ($request->filled('date_from')) {
