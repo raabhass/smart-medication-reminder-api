@@ -13,25 +13,25 @@ class DashboardController extends Controller
 {
     public function summary()
     {
-        $totalPatients     = Patient::count();
-        $missedDosesToday  = DoseEvent::where('status', 'missed')
+        $totalPatients = Patient::count();
+        $missedDosesToday = DoseEvent::where('status', 'missed')
             ->whereDate('event_time', Carbon::today())
             ->count();
-        $activeAlerts      = Alert::where('is_acknowledged', false)->count();
-        $upcomingRefills   = Alert::where('type', 'refill_due')
+        $activeAlerts = Alert::where('is_acknowledged', false)->count();
+        $upcomingRefills = Alert::where('type', 'refill_due')
             ->where('is_acknowledged', false)
             ->count();
-        $recentAlerts      = Alert::with('patient')
+        $recentAlerts = Alert::with('patient')
             ->orderByDesc('alert_time')
             ->limit(5)
             ->get();
 
         return response()->json([
-            'total_patients'    => $totalPatients,
+            'total_patients' => $totalPatients,
             'missed_doses_today' => $missedDosesToday,
-            'active_alerts'     => $activeAlerts,
-            'upcoming_refills'  => $upcomingRefills,
-            'recent_alerts'     => AlertResource::collection($recentAlerts),
+            'active_alerts' => $activeAlerts,
+            'upcoming_refills' => $upcomingRefills,
+            'recent_alerts' => AlertResource::collection($recentAlerts),
         ]);
     }
 }

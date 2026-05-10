@@ -17,105 +17,105 @@ class DatabaseSeeder extends Seeder
     {
         // Caregiver user — login: caregiver@example.com / password
         $user = User::create([
-            'name'     => 'Primary Caregiver',
-            'email'    => 'caregiver@example.com',
+            'name' => 'Primary Caregiver',
+            'email' => 'caregiver@example.com',
             'password' => Hash::make('password'),
-            'role'     => 'caregiver',
+            'role' => 'caregiver',
         ]);
 
         // Patients
         $john = Patient::create([
             'created_by_user_id' => $user->id,
-            'full_name'          => 'John Doe',
-            'age'                => 78,
-            'gender'             => 'male',
-            'status'             => 'stable',
+            'full_name' => 'John Doe',
+            'age' => 78,
+            'gender' => 'male',
+            'status' => 'stable',
         ]);
 
         $mary = Patient::create([
             'created_by_user_id' => $user->id,
-            'full_name'          => 'Mary Smith',
-            'age'                => 82,
-            'gender'             => 'female',
-            'status'             => 'needs_attention',
+            'full_name' => 'Mary Smith',
+            'age' => 82,
+            'gender' => 'female',
+            'status' => 'needs_attention',
         ]);
 
         $robert = Patient::create([
             'created_by_user_id' => $user->id,
-            'full_name'          => 'Robert Brown',
-            'age'                => 75,
-            'gender'             => 'male',
-            'status'             => 'stable',
+            'full_name' => 'Robert Brown',
+            'age' => 75,
+            'gender' => 'male',
+            'status' => 'stable',
         ]);
 
         // Medication schedules
         $aspirin = MedicationSchedule::create([
-            'patient_id'      => $john->id,
+            'patient_id' => $john->id,
             'medication_name' => 'Aspirin',
-            'dosage'          => '75 mg',
-            'frequency'       => 'daily',
-            'scheduled_time'  => '08:00:00',
-            'instructions'    => 'After breakfast',
-            'start_date'      => Carbon::today(),
-            'is_active'       => true,
+            'dosage' => '75 mg',
+            'frequency' => 'daily',
+            'scheduled_time' => '08:00:00',
+            'instructions' => 'After breakfast',
+            'start_date' => Carbon::today(),
+            'is_active' => true,
         ]);
 
         $metformin = MedicationSchedule::create([
-            'patient_id'      => $mary->id,
+            'patient_id' => $mary->id,
             'medication_name' => 'Metformin',
-            'dosage'          => '500 mg',
-            'frequency'       => 'twice_daily',
-            'scheduled_time'  => '09:00:00',
-            'instructions'    => 'With food',
-            'start_date'      => Carbon::today(),
-            'is_active'       => true,
+            'dosage' => '500 mg',
+            'frequency' => 'twice_daily',
+            'scheduled_time' => '09:00:00',
+            'instructions' => 'With food',
+            'start_date' => Carbon::today(),
+            'is_active' => true,
         ]);
 
         $vitaminD = MedicationSchedule::create([
-            'patient_id'      => $robert->id,
+            'patient_id' => $robert->id,
             'medication_name' => 'Vitamin D',
-            'dosage'          => '1000 IU',
-            'frequency'       => 'daily',
-            'scheduled_time'  => '13:00:00',
-            'instructions'    => 'With lunch',
-            'start_date'      => Carbon::today(),
-            'is_active'       => true,
+            'dosage' => '1000 IU',
+            'frequency' => 'daily',
+            'scheduled_time' => '13:00:00',
+            'instructions' => 'With lunch',
+            'start_date' => Carbon::today(),
+            'is_active' => true,
         ]);
 
         // Dose events
         DoseEvent::create([
-            'patient_id'             => $john->id,
+            'patient_id' => $john->id,
             'medication_schedule_id' => $aspirin->id,
-            'status'                 => 'taken',
-            'event_time'             => Carbon::today()->setTime(8, 2),
+            'status' => 'taken',
+            'event_time' => Carbon::today()->setTime(8, 2),
         ]);
 
         DoseEvent::create([
-            'patient_id'             => $mary->id,
+            'patient_id' => $mary->id,
             'medication_schedule_id' => $metformin->id,
-            'status'                 => 'missed',
-            'event_time'             => Carbon::today()->setTime(9, 0),
+            'status' => 'missed',
+            'event_time' => Carbon::today()->setTime(9, 0),
         ]);
 
         DoseEvent::create([
-            'patient_id'             => $robert->id,
+            'patient_id' => $robert->id,
             'medication_schedule_id' => $vitaminD->id,
-            'status'                 => 'taken',
-            'event_time'             => Carbon::today()->setTime(13, 5),
+            'status' => 'taken',
+            'event_time' => Carbon::today()->setTime(13, 5),
         ]);
 
         // Alerts
         Alert::create([
             'patient_id' => $mary->id,
-            'type'       => 'missed_dose',
-            'message'    => 'Missed morning Metformin dose',
+            'type' => 'missed_dose',
+            'message' => 'Missed morning Metformin dose',
             'alert_time' => Carbon::today()->setTime(9, 0),
         ]);
 
         Alert::create([
             'patient_id' => $john->id,
-            'type'       => 'refill_due',
-            'message'    => 'Aspirin prescription needs refill',
+            'type' => 'refill_due',
+            'message' => 'Aspirin prescription needs refill',
             'alert_time' => Carbon::today()->setTime(8, 0),
         ]);
     }

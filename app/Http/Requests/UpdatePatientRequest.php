@@ -15,10 +15,10 @@ class UpdatePatientRequest extends FormRequest
     {
         return [
             'full_name' => ['sometimes', 'string', 'max:255'],
-            'age'       => ['sometimes', 'integer', 'min:0', 'max:130'],
-            'gender'    => ['nullable', 'in:male,female,other'],
-            'status'    => ['sometimes', 'in:stable,needs_attention'],
-            'notes'     => ['nullable', 'string'],
+            'age' => ['sometimes', 'integer', 'min:0', 'max:130'],
+            'gender' => ['nullable', 'in:male,female,other'],
+            'status' => ['sometimes', 'in:stable,needs_attention'],
+            'notes' => ['nullable', 'string'],
         ];
     }
 }
