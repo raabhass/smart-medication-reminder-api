@@ -19,6 +19,9 @@ class StorePatientRequest extends FormRequest
             'gender' => ['nullable', 'in:male,female,other'],
             'status' => ['required', 'in:stable,needs_attention'],
             'notes' => ['nullable', 'string'],
+            'emergency_contact_name' => ['nullable', 'string', 'max:255'],
+            'emergency_contact_phone' => ['nullable', 'string', 'max:255'],
+            'emergency_contact_relationship' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

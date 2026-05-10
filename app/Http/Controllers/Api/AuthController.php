@@ -21,13 +21,7 @@ class AuthController extends Controller
 
         $user = User::create($data);
 
-        if ($user->role === 'patient') {
-            Patient::create([
-                'user_id' => $user->id,
-                'full_name' => $user->name,
-                'status' => 'stable',
-            ]);
-        }
+        $this->ensurePatientRecord($user);
 
         $user->load('patient');
         $token = $user->createToken('api-token')->plainTextToken;
@@ -45,7 +39,10 @@ class AuthController extends Controller
             return response()->json(['message' => 'Invalid credentials'], 401);
         }
 
-        $user = Auth::user()->load('patient');
+        $user = Auth::user();
+        $this->ensurePatientRecord($user);
+
+        $user->load('patient');
         $token = $user->createToken('api-token')->plainTextToken;
 
         return response()->json([
@@ -57,7 +54,10 @@ class AuthController extends Controller
 
     public function me(Request $request)
     {
-        return new UserResource($request->user()->load('patient'));
+        $user = $request->user();
+        $this->ensurePatientRecord($user);
+
+        return new UserResource($user->load('patient'));
     }
 
     public function updateMe(UpdateProfileRequest $request)
@@ -73,5 +73,18 @@ class AuthController extends Controller
         $request->user()->currentAccessToken()->delete();
 
         return response()->json(['message' => 'Logged out successfully']);
+    }
+
+    private function ensurePatientRecord(User $user): void
+    {
+        if ($user->role !== 'patient' || $user->patient()->exists()) {
+            return;
+        }
+
+        Patient::create([
+            'user_id' => $user->id,
+            'full_name' => $user->name,
+            'status' => 'stable',
+        ]);
     }
 }

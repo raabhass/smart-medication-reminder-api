@@ -17,6 +17,9 @@ class Patient extends Model
         'gender',
         'status',
         'notes',
+        'emergency_contact_name',
+        'emergency_contact_phone',
+        'emergency_contact_relationship',
     ];
 
     public function user()

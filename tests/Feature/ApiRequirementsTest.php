@@ -30,6 +30,60 @@ class ApiRequirementsTest extends TestCase
             ->assertJsonPath('data.email', 'updated@example.com');
     }
 
+    public function test_patient_registration_creates_linked_patient_and_returns_patient_id(): void
+    {
+        $response = $this->postJson('/api/auth/register', [
+            'name' => 'Jenny Patient',
+            'email' => 'jenny@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'role' => 'patient',
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('user.role', 'patient')
+            ->assertJsonPath('user.name', 'Jenny Patient')
+            ->assertJsonStructure(['user' => ['patient_id']]);
+
+        $patientId = $response->json('user.patient_id');
+        $this->assertNotNull($patientId);
+        $this->assertDatabaseHas('patients', [
+            'id' => $patientId,
+            'full_name' => 'Jenny Patient',
+            'status' => 'stable',
+        ]);
+    }
+
+    public function test_patient_login_repairs_missing_patient_record_and_returns_patient_id(): void
+    {
+        $user = User::factory()->create([
+            'name' => 'Jenny Patient',
+            'email' => 'jenny@example.com',
+            'password' => 'password',
+            'role' => 'patient',
+        ]);
+
+        $this->assertDatabaseMissing('patients', ['user_id' => $user->id]);
+
+        $response = $this->postJson('/api/auth/login', [
+            'email' => 'jenny@example.com',
+            'password' => 'password',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('user.role', 'patient')
+            ->assertJsonStructure(['user' => ['patient_id']]);
+
+        $patientId = $response->json('user.patient_id');
+        $this->assertNotNull($patientId);
+        $this->assertDatabaseHas('patients', [
+            'id' => $patientId,
+            'user_id' => $user->id,
+            'full_name' => 'Jenny Patient',
+            'status' => 'stable',
+        ]);
+    }
+
     public function test_patients_are_scoped_to_authenticated_user_role(): void
     {
         $caregiver = User::factory()->create(['role' => 'caregiver']);
@@ -63,6 +117,36 @@ class ApiRequirementsTest extends TestCase
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.id', $linkedPatient->id);
+    }
+
+    public function test_patient_responses_include_emergency_contact_fields(): void
+    {
+        $caregiver = User::factory()->create(['role' => 'caregiver']);
+        $patient = Patient::create([
+            'created_by_user_id' => $caregiver->id,
+            'full_name' => 'Visible Patient',
+            'status' => 'stable',
+            'emergency_contact_name' => 'Stella Contact',
+            'emergency_contact_phone' => '555-0100',
+            'emergency_contact_relationship' => 'Sister',
+        ]);
+
+        Sanctum::actingAs($caregiver);
+
+        $this->getJson("/api/patients/{$patient->id}")
+            ->assertOk()
+            ->assertJsonPath('data.emergency_contact_name', 'Stella Contact')
+            ->assertJsonPath('data.emergency_contact_phone', '555-0100')
+            ->assertJsonPath('data.emergency_contact_relationship', 'Sister');
+
+        $this->patchJson("/api/patients/{$patient->id}", [
+            'emergency_contact_name' => 'Updated Contact',
+            'emergency_contact_phone' => '555-0199',
+            'emergency_contact_relationship' => 'Mother',
+        ])->assertOk()
+            ->assertJsonPath('data.emergency_contact_name', 'Updated Contact')
+            ->assertJsonPath('data.emergency_contact_phone', '555-0199')
+            ->assertJsonPath('data.emergency_contact_relationship', 'Mother');
     }
 
     public function test_medication_schedule_updates_are_scoped_to_the_route_patient(): void
