@@ -8,6 +8,7 @@ use App\Models\MedicationSchedule;
 use App\Models\Patient;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -23,11 +24,13 @@ class ApiRequirementsTest extends TestCase
         $response = $this->patchJson('/api/auth/me', [
             'name' => 'Updated Name',
             'email' => 'updated@example.com',
+            'push_token' => 'ExponentPushToken[test-token]',
         ]);
 
         $response->assertOk()
             ->assertJsonPath('data.name', 'Updated Name')
-            ->assertJsonPath('data.email', 'updated@example.com');
+            ->assertJsonPath('data.email', 'updated@example.com')
+            ->assertJsonPath('data.push_token', 'ExponentPushToken[test-token]');
     }
 
     public function test_patient_registration_creates_linked_patient_and_returns_patient_id(): void
@@ -475,6 +478,49 @@ class ApiRequirementsTest extends TestCase
             ->assertJsonPath('active_alerts', 1)
             ->assertJsonPath('upcoming_refills', 1)
             ->assertJsonCount(1, 'recent_alerts');
+    }
+
+    public function test_scheduled_detection_creates_missed_dose_and_refill_alerts_once(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-05-10 10:00:00'));
+
+        $patientUser = User::factory()->create([
+            'role' => 'patient',
+            'push_token' => 'ExponentPushToken[test-token]',
+        ]);
+        $patient = Patient::create([
+            'user_id' => $patientUser->id,
+            'full_name' => 'Visible Patient',
+            'status' => 'stable',
+        ]);
+        $schedule = $this->scheduleFor($patient, [
+            'scheduled_time' => '08:00:00',
+            'remaining_pills' => 7,
+        ]);
+
+        $this->artisan('medications:detect-alerts')->assertExitCode(0);
+        $this->artisan('medications:detect-alerts')->assertExitCode(0);
+
+        $this->assertDatabaseHas('dose_events', [
+            'patient_id' => $patient->id,
+            'medication_schedule_id' => $schedule->id,
+            'status' => 'missed',
+            'notes' => 'Automatically marked missed by scheduled detection.',
+        ]);
+        $this->assertDatabaseCount('dose_events', 1);
+        $this->assertDatabaseHas('alerts', [
+            'patient_id' => $patient->id,
+            'type' => 'missed_dose',
+            'message' => 'Visible Patient missed Aspirin.',
+        ]);
+        $this->assertDatabaseHas('alerts', [
+            'patient_id' => $patient->id,
+            'type' => 'refill_due',
+            'message' => 'Visible Patient is low on Aspirin.',
+        ]);
+        $this->assertDatabaseCount('alerts', 2);
+
+        Carbon::setTestNow();
     }
 
     private function scheduleFor(Patient $patient, array $attributes = []): MedicationSchedule

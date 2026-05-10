@@ -22,6 +22,7 @@ class UpdateProfileRequest extends FormRequest
                 Rule::unique('users', 'email')->ignore($this->user()->id),
             ],
             'password' => ['sometimes', 'string', 'min:8', 'confirmed'],
+            'push_token' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

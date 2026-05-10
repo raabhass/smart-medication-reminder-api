@@ -14,6 +14,7 @@ class UserResource extends JsonResource
             'name' => $this->name,
             'email' => $this->email,
             'role' => $this->role,
+            'push_token' => $this->push_token,
             'patient_id' => $this->when(
                 $this->role === 'patient',
                 fn () => $this->relationLoaded('patient') ? $this->patient?->id : null
