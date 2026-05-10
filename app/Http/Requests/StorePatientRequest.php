@@ -15,10 +15,10 @@ class StorePatientRequest extends FormRequest
     {
         return [
             'full_name' => ['required', 'string', 'max:255'],
-            'age'       => ['required', 'integer', 'min:0', 'max:130'],
-            'gender'    => ['nullable', 'in:male,female,other'],
-            'status'    => ['required', 'in:stable,needs_attention'],
-            'notes'     => ['nullable', 'string'],
+            'age' => ['nullable', 'integer', 'min:0', 'max:130'],
+            'gender' => ['nullable', 'in:male,female,other'],
+            'status' => ['required', 'in:stable,needs_attention'],
+            'notes' => ['nullable', 'string'],
         ];
     }
 }

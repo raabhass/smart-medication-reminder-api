@@ -8,23 +8,24 @@ use App\Http\Requests\UpdatePatientRequest;
 use App\Http\Resources\PatientResource;
 use App\Models\Patient;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
 class PatientController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Patient::query();
+        $query = $this->visiblePatients($request);
 
         if ($request->filled('search')) {
-            $query->where('full_name', 'like', '%' . $request->search . '%');
+            $query->where('full_name', 'like', '%'.$request->search.'%');
         }
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        $perPage  = (int) $request->get('per_page', 10);
+        $perPage = (int) $request->get('per_page', 10);
         $patients = $query->paginate($perPage);
 
         return PatientResource::collection($patients);
@@ -41,11 +42,15 @@ class PatientController extends Controller
 
     public function show(Patient $patient)
     {
+        $this->authorizePatient($patient);
+
         return new PatientResource($patient);
     }
 
     public function update(UpdatePatientRequest $request, Patient $patient)
     {
+        $this->authorizePatient($patient);
+
         $patient->update($request->validated());
 
         return new PatientResource($patient);
@@ -53,6 +58,8 @@ class PatientController extends Controller
 
     public function destroy(Patient $patient)
     {
+        $this->authorizePatient($patient);
+
         $patient->delete();
 
         return response()->json(['message' => 'Patient deleted']);
@@ -60,6 +67,8 @@ class PatientController extends Controller
 
     public function linkUser(Request $request, Patient $patient)
     {
+        $this->authorizePatient($patient);
+
         $request->validate([
             'user_id' => ['required', 'integer', 'exists:users,id'],
         ]);
@@ -77,5 +86,28 @@ class PatientController extends Controller
         $patient->update(['user_id' => $user->id]);
 
         return new PatientResource($patient->fresh());
+    }
+
+    private function visiblePatients(Request $request): Builder
+    {
+        $user = $request->user();
+        $query = Patient::query();
+
+        if ($user->role === 'patient') {
+            return $query->where('user_id', $user->id);
+        }
+
+        return $query->where('created_by_user_id', $user->id);
+    }
+
+    private function authorizePatient(Patient $patient): void
+    {
+        $user = request()->user();
+
+        abort_unless(
+            ($user->role === 'patient' && $patient->user_id === $user->id)
+                || ($user->role === 'caregiver' && $patient->created_by_user_id === $user->id),
+            404
+        );
     }
 }
