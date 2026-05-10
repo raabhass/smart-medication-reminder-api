@@ -44,6 +44,8 @@ class PatientController extends Controller
     {
         $this->authorizePatient($patient);
 
+        $this->loadPatientStats($patient);
+
         return new PatientResource($patient);
     }
 
@@ -109,5 +111,18 @@ class PatientController extends Controller
                 || ($user->role === 'caregiver' && $patient->created_by_user_id === $user->id),
             404
         );
+    }
+
+    private function loadPatientStats(Patient $patient): void
+    {
+        $patient->loadCount([
+            'medicationSchedules as total_medications' => fn ($query) => $query->where('is_active', true),
+            'doseEvents as total_dose_events',
+            'doseEvents as taken_dose_events' => fn ($query) => $query->where('status', 'taken'),
+        ]);
+
+        $patient->loadMax([
+            'doseEvents as last_taken_at' => fn ($query) => $query->where('status', 'taken'),
+        ], 'event_time');
     }
 }

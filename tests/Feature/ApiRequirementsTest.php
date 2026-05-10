@@ -129,6 +129,8 @@ class ApiRequirementsTest extends TestCase
             'emergency_contact_name' => 'Stella Contact',
             'emergency_contact_phone' => '555-0100',
             'emergency_contact_relationship' => 'Sister',
+            'allergies' => 'Penicillin',
+            'medical_notes' => 'Prefers evening calls',
         ]);
 
         Sanctum::actingAs($caregiver);
@@ -137,16 +139,74 @@ class ApiRequirementsTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.emergency_contact_name', 'Stella Contact')
             ->assertJsonPath('data.emergency_contact_phone', '555-0100')
-            ->assertJsonPath('data.emergency_contact_relationship', 'Sister');
+            ->assertJsonPath('data.emergency_contact_relationship', 'Sister')
+            ->assertJsonPath('data.allergies', 'Penicillin')
+            ->assertJsonPath('data.medical_notes', 'Prefers evening calls');
+
+        $this->postJson('/api/patients', [
+            'full_name' => 'Created Patient',
+            'status' => 'stable',
+            'allergies' => 'Latex',
+            'medical_notes' => 'Uses large-print labels',
+        ])->assertCreated()
+            ->assertJsonPath('data.allergies', 'Latex')
+            ->assertJsonPath('data.medical_notes', 'Uses large-print labels');
 
         $this->patchJson("/api/patients/{$patient->id}", [
             'emergency_contact_name' => 'Updated Contact',
             'emergency_contact_phone' => '555-0199',
             'emergency_contact_relationship' => 'Mother',
+            'allergies' => 'Shellfish',
+            'medical_notes' => 'Needs transport assistance',
         ])->assertOk()
             ->assertJsonPath('data.emergency_contact_name', 'Updated Contact')
             ->assertJsonPath('data.emergency_contact_phone', '555-0199')
-            ->assertJsonPath('data.emergency_contact_relationship', 'Mother');
+            ->assertJsonPath('data.emergency_contact_relationship', 'Mother')
+            ->assertJsonPath('data.allergies', 'Shellfish')
+            ->assertJsonPath('data.medical_notes', 'Needs transport assistance');
+    }
+
+    public function test_patient_show_response_includes_health_overview_stats(): void
+    {
+        $caregiver = User::factory()->create(['role' => 'caregiver']);
+        $patient = Patient::create([
+            'created_by_user_id' => $caregiver->id,
+            'full_name' => 'Visible Patient',
+            'status' => 'stable',
+        ]);
+        $activeSchedule = $this->scheduleFor($patient);
+        $this->scheduleFor($patient, [
+            'medication_name' => 'Inactive Med',
+            'is_active' => false,
+        ]);
+        $lastTakenAt = now()->subHour()->setMicrosecond(0);
+
+        DoseEvent::create([
+            'patient_id' => $patient->id,
+            'medication_schedule_id' => $activeSchedule->id,
+            'status' => 'missed',
+            'event_time' => now()->subDay(),
+        ]);
+        DoseEvent::create([
+            'patient_id' => $patient->id,
+            'medication_schedule_id' => $activeSchedule->id,
+            'status' => 'taken',
+            'event_time' => now()->subHours(2),
+        ]);
+        DoseEvent::create([
+            'patient_id' => $patient->id,
+            'medication_schedule_id' => $activeSchedule->id,
+            'status' => 'taken',
+            'event_time' => $lastTakenAt,
+        ]);
+
+        Sanctum::actingAs($caregiver);
+
+        $this->getJson("/api/patients/{$patient->id}")
+            ->assertOk()
+            ->assertJsonPath('data.total_medications', 1)
+            ->assertJsonPath('data.adherence_rate', 66.67)
+            ->assertJsonPath('data.last_taken_at', $lastTakenAt->toDateTimeString());
     }
 
     public function test_medication_schedule_updates_are_scoped_to_the_route_patient(): void
