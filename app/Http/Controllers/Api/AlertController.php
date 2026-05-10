@@ -13,6 +13,13 @@ class AlertController extends Controller
     public function index(Request $request)
     {
         $query = Alert::with('patient');
+        $user = $request->user();
+
+        if ($user->role === 'patient') {
+            $query->whereHas('patient', fn ($patientQuery) => $patientQuery->where('user_id', $user->id));
+        } else {
+            $query->whereHas('patient', fn ($patientQuery) => $patientQuery->where('created_by_user_id', $user->id));
+        }
 
         if ($request->filled('patient_id')) {
             $query->where('patient_id', $request->patient_id);
@@ -27,7 +34,7 @@ class AlertController extends Controller
         }
 
         $perPage = (int) $request->get('per_page', 10);
-        $alerts  = $query->orderByDesc('alert_time')->paginate($perPage);
+        $alerts = $query->orderByDesc('alert_time')->paginate($perPage);
 
         return AlertResource::collection($alerts);
     }
@@ -35,9 +42,9 @@ class AlertController extends Controller
     public function acknowledge(Request $request, Alert $alert)
     {
         $alert->update([
-            'is_acknowledged'          => true,
-            'acknowledged_by_user_id'  => $request->user()->id,
-            'acknowledged_at'          => Carbon::now(),
+            'is_acknowledged' => true,
+            'acknowledged_by_user_id' => $request->user()->id,
+            'acknowledged_at' => Carbon::now(),
         ]);
 
         return response()->json(['message' => 'Alert acknowledged']);
