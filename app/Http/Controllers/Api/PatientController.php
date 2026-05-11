@@ -40,6 +40,23 @@ class PatientController extends Controller
         return new PatientResource($patient);
     }
 
+    public function unassigned(Request $request)
+    {
+        abort_unless($request->user()->role === 'caregiver', 404);
+
+        $query = Patient::query()
+            ->whereNull('created_by_user_id')
+            ->whereNotNull('user_id');
+
+        if ($request->filled('search')) {
+            $query->where('full_name', 'like', '%'.$request->search.'%');
+        }
+
+        $perPage = (int) $request->get('per_page', 10);
+
+        return PatientResource::collection($query->paginate($perPage));
+    }
+
     public function show(Patient $patient)
     {
         $this->authorizePatient($patient);
@@ -86,6 +103,16 @@ class PatientController extends Controller
         }
 
         $patient->update(['user_id' => $user->id]);
+
+        return new PatientResource($patient->fresh());
+    }
+
+    public function assignCaregiver(Request $request, Patient $patient)
+    {
+        abort_unless($request->user()->role === 'caregiver', 404);
+        abort_unless($patient->created_by_user_id === null, 422, 'Patient already has a caregiver assigned.');
+
+        $patient->update(['created_by_user_id' => $request->user()->id]);
 
         return new PatientResource($patient->fresh());
     }

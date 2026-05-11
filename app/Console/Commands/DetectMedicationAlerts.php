@@ -30,6 +30,7 @@ class DetectMedicationAlerts extends Command
         $today = $now->toDateString();
 
         MedicationSchedule::with(['patient.user'])
+            ->whereHas('patient')
             ->where('is_active', true)
             ->whereDate('start_date', '<=', $today)
             ->where(function ($query) use ($today) {
@@ -39,6 +40,12 @@ class DetectMedicationAlerts extends Command
             ->whereTime('scheduled_time', '<=', $now->format('H:i:s'))
             ->get()
             ->each(function (MedicationSchedule $schedule) use ($now, $pushNotifications, $today) {
+                if (! $schedule->patient) {
+                    $this->warn("Skipping schedule ID {$schedule->id}: patient not found.");
+
+                    return;
+                }
+
                 $alreadyRecorded = DoseEvent::where('medication_schedule_id', $schedule->id)
                     ->whereDate('event_time', $today)
                     ->exists();
@@ -77,11 +84,18 @@ class DetectMedicationAlerts extends Command
     private function recordRefillAlerts(Carbon $now): void
     {
         MedicationSchedule::with('patient')
+            ->whereHas('patient')
             ->where('is_active', true)
             ->whereNotNull('remaining_pills')
             ->where('remaining_pills', '<=', 7)
             ->get()
             ->each(function (MedicationSchedule $schedule) use ($now) {
+                if (! $schedule->patient) {
+                    $this->warn("Skipping schedule ID {$schedule->id}: patient not found.");
+
+                    return;
+                }
+
                 $message = "{$schedule->patient->full_name} is low on {$schedule->medication_name}.";
 
                 $alreadyAlertedToday = Alert::where('patient_id', $schedule->patient_id)

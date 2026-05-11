@@ -19,12 +19,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/dashboard/summary', [DashboardController::class, 'summary']);
 
     Route::get('/patients', [PatientController::class, 'index']);
+    Route::get('/patients/unassigned', [PatientController::class, 'unassigned']);
     Route::post('/patients', [PatientController::class, 'store']);
     Route::get('/patients/{patient}', [PatientController::class, 'show']);
     Route::put('/patients/{patient}', [PatientController::class, 'update']);
     Route::patch('/patients/{patient}', [PatientController::class, 'update']);
     Route::delete('/patients/{patient}', [PatientController::class, 'destroy']);
     Route::post('/patients/{patient}/link-user', [PatientController::class, 'linkUser']);
+    Route::post('/patients/{patient}/assign-caregiver', [PatientController::class, 'assignCaregiver']);
 
     Route::get('/patients/{patient}/medication-schedules', [MedicationScheduleController::class, 'indexByPatient']);
     Route::post('/patients/{patient}/medication-schedules', [MedicationScheduleController::class, 'store']);

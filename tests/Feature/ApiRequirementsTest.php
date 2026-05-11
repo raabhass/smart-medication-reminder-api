@@ -122,6 +122,101 @@ class ApiRequirementsTest extends TestCase
             ->assertJsonPath('data.0.id', $linkedPatient->id);
     }
 
+    public function test_caregiver_can_find_and_assign_unassigned_patient(): void
+    {
+        $caregiver = User::factory()->create(['role' => 'caregiver']);
+        $otherCaregiver = User::factory()->create(['role' => 'caregiver']);
+        $patientUser = User::factory()->create(['role' => 'patient']);
+        $unassignedPatient = Patient::create([
+            'user_id' => $patientUser->id,
+            'full_name' => 'Self Registered Patient',
+            'status' => 'stable',
+        ]);
+        Patient::create([
+            'created_by_user_id' => $otherCaregiver->id,
+            'full_name' => 'Assigned Patient',
+            'status' => 'stable',
+        ]);
+
+        Sanctum::actingAs($caregiver);
+
+        $this->getJson('/api/patients/unassigned?per_page=50')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $unassignedPatient->id)
+            ->assertJsonPath('data.0.created_by_user_id', null);
+
+        $this->postJson("/api/patients/{$unassignedPatient->id}/assign-caregiver")
+            ->assertOk()
+            ->assertJsonPath('data.id', $unassignedPatient->id)
+            ->assertJsonPath('data.created_by_user_id', $caregiver->id);
+
+        $this->getJson('/api/patients?per_page=50')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $unassignedPatient->id);
+    }
+
+    public function test_patient_can_view_caregiver_created_medication_schedule_when_linked(): void
+    {
+        $caregiver = User::factory()->create(['role' => 'caregiver']);
+        $patientUser = User::factory()->create(['role' => 'patient']);
+        $patient = Patient::create([
+            'user_id' => $patientUser->id,
+            'full_name' => 'Linked Patient',
+            'status' => 'stable',
+        ]);
+
+        Sanctum::actingAs($caregiver);
+
+        $this->postJson("/api/patients/{$patient->id}/assign-caregiver")
+            ->assertOk();
+
+        $this->postJson("/api/patients/{$patient->id}/medication-schedules", [
+            'medication_name' => 'Aspirin',
+            'dosage' => '75 mg',
+            'frequency' => 'daily',
+            'scheduled_time' => '08:00',
+            'start_date' => now()->toDateString(),
+        ])->assertCreated();
+
+        Sanctum::actingAs($patientUser);
+
+        $this->getJson("/api/patients/{$patient->id}/medication-schedules")
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.medication_name', 'Aspirin');
+    }
+
+    public function test_self_registered_patient_can_create_and_fetch_own_medication_schedule(): void
+    {
+        $patientUser = User::factory()->create(['role' => 'patient']);
+        $patient = Patient::create([
+            'id' => 13,
+            'user_id' => $patientUser->id,
+            'full_name' => 'Danny',
+            'status' => 'stable',
+        ]);
+
+        Sanctum::actingAs($patientUser);
+
+        $this->postJson("/api/patients/{$patient->id}/medication-schedules", [
+            'medication_name' => 'Mobile Medication',
+            'dosage' => '10 mg',
+            'frequency' => 'daily',
+            'scheduled_time' => '08:00',
+            'start_date' => now()->toDateString(),
+        ])->assertCreated()
+            ->assertJsonPath('data.patient_id', $patient->id)
+            ->assertJsonPath('data.medication_name', 'Mobile Medication');
+
+        $this->getJson("/api/patients/{$patient->id}/medication-schedules")
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.patient_id', $patient->id)
+            ->assertJsonPath('data.0.medication_name', 'Mobile Medication');
+    }
+
     public function test_patient_responses_include_emergency_contact_fields(): void
     {
         $caregiver = User::factory()->create(['role' => 'caregiver']);
@@ -518,6 +613,53 @@ class ApiRequirementsTest extends TestCase
             'type' => 'refill_due',
             'message' => 'Visible Patient is low on Aspirin.',
         ]);
+        $this->assertDatabaseCount('alerts', 2);
+
+        Carbon::setTestNow();
+    }
+
+    public function test_scheduled_detection_skips_schedules_without_available_patients(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-05-10 10:00:00'));
+
+        $patient = Patient::create([
+            'full_name' => 'Valid Patient',
+            'status' => 'stable',
+        ]);
+        $validSchedule = $this->scheduleFor($patient, [
+            'scheduled_time' => '08:00:00',
+            'remaining_pills' => 7,
+        ]);
+
+        $deletedPatient = Patient::create([
+            'full_name' => 'Deleted Patient',
+            'status' => 'stable',
+        ]);
+        $this->scheduleFor($deletedPatient, [
+            'medication_name' => 'Orphaned Medication',
+            'scheduled_time' => '08:00:00',
+            'remaining_pills' => 7,
+        ]);
+        $deletedPatient->delete();
+
+        $this->artisan('medications:detect-alerts')->assertExitCode(0);
+
+        $this->assertDatabaseHas('dose_events', [
+            'patient_id' => $patient->id,
+            'medication_schedule_id' => $validSchedule->id,
+            'status' => 'missed',
+        ]);
+        $this->assertDatabaseHas('alerts', [
+            'patient_id' => $patient->id,
+            'type' => 'missed_dose',
+            'message' => 'Valid Patient missed Aspirin.',
+        ]);
+        $this->assertDatabaseHas('alerts', [
+            'patient_id' => $patient->id,
+            'type' => 'refill_due',
+            'message' => 'Valid Patient is low on Aspirin.',
+        ]);
+        $this->assertDatabaseCount('dose_events', 1);
         $this->assertDatabaseCount('alerts', 2);
 
         Carbon::setTestNow();
