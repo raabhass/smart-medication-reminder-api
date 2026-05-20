@@ -19,6 +19,10 @@ class UserResource extends JsonResource
                 $this->role === 'patient',
                 fn () => $this->relationLoaded('patient') ? $this->patient?->id : null
             ),
+            'patient' => $this->when(
+                $this->role === 'patient' && $this->relationLoaded('patient') && $this->patient,
+                fn () => new PatientResource($this->patient)
+            ),
         ];
     }
 }

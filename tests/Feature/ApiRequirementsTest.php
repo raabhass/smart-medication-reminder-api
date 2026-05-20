@@ -33,6 +33,46 @@ class ApiRequirementsTest extends TestCase
             ->assertJsonPath('data.push_token', 'ExponentPushToken[test-token]');
     }
 
+    public function test_patient_can_update_linked_patient_profile_through_auth_me(): void
+    {
+        $user = User::factory()->create([
+            'name' => 'Danny Patient',
+            'role' => 'patient',
+        ]);
+        $patient = Patient::create([
+            'user_id' => $user->id,
+            'full_name' => 'Danny Patient',
+            'status' => 'stable',
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $this->patchJson('/api/auth/me', [
+            'emergency_contact_name' => 'Maria Contact',
+            'emergency_contact_phone' => '555-0133',
+            'emergency_contact_relationship' => 'Spouse',
+            'allergies' => 'Penicillin',
+            'medical_notes' => 'Uses a weekly pill organizer',
+        ])->assertOk()
+            ->assertJsonPath('data.patient_id', $patient->id)
+            ->assertJsonPath('data.patient.id', $patient->id)
+            ->assertJsonPath('data.patient.emergency_contact_name', 'Maria Contact')
+            ->assertJsonPath('data.patient.emergency_contact_phone', '555-0133')
+            ->assertJsonPath('data.patient.emergency_contact_relationship', 'Spouse')
+            ->assertJsonPath('data.patient.allergies', 'Penicillin')
+            ->assertJsonPath('data.patient.medical_notes', 'Uses a weekly pill organizer');
+
+        $this->assertDatabaseHas('patients', [
+            'id' => $patient->id,
+            'user_id' => $user->id,
+            'emergency_contact_name' => 'Maria Contact',
+            'emergency_contact_phone' => '555-0133',
+            'emergency_contact_relationship' => 'Spouse',
+            'allergies' => 'Penicillin',
+            'medical_notes' => 'Uses a weekly pill organizer',
+        ]);
+    }
+
     public function test_patient_registration_creates_linked_patient_and_returns_patient_id(): void
     {
         $response = $this->postJson('/api/auth/register', [

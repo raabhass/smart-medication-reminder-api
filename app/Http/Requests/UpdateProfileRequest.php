@@ -23,6 +23,11 @@ class UpdateProfileRequest extends FormRequest
             ],
             'password' => ['sometimes', 'string', 'min:8', 'confirmed'],
             'push_token' => ['nullable', 'string', 'max:255'],
+            'emergency_contact_name' => ['nullable', 'string', 'max:255'],
+            'emergency_contact_phone' => ['nullable', 'string', 'max:255'],
+            'emergency_contact_relationship' => ['nullable', 'string', 'max:255'],
+            'allergies' => ['nullable', 'string', 'max:255'],
+            'medical_notes' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

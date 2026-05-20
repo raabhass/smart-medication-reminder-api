@@ -63,7 +63,26 @@ class AuthController extends Controller
     public function updateMe(UpdateProfileRequest $request)
     {
         $user = $request->user();
-        $user->update($request->validated());
+        $validated = $request->validated();
+        $patientFields = [
+            'emergency_contact_name',
+            'emergency_contact_phone',
+            'emergency_contact_relationship',
+            'allergies',
+            'medical_notes',
+        ];
+
+        $user->update(collect($validated)->except($patientFields)->all());
+
+        if ($user->role === 'patient') {
+            $this->ensurePatientRecord($user);
+
+            $patientData = collect($validated)->only($patientFields)->all();
+
+            if ($patientData !== []) {
+                $user->patient()->update($patientData);
+            }
+        }
 
         return new UserResource($user->fresh()->load('patient'));
     }
